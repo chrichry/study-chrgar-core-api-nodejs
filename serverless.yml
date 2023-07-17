@@ -1,0 +1,67 @@
+service: study-chrgar-core-api-nodejs
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-east-2'}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${self:provider.region}:*:table/ProductsTable"
+
+functions:
+  api:
+    handler: crud/index.handler
+    events:
+      - httpApi:
+          path: /up
+          method: get
+  add:
+    handler: crud/add.handler
+    events:
+      - httpApi:
+          path: /add
+          method: post
+
+plugins:
+  - serverless-offline
+  - serverless-dynamodb
+  - serverless-plugin-typescript
+  - serverless-dynamodb-local
+
+custom:
+  serverless-dynamodb:
+    port: 8000
+    stages:
+      - local-dev
+    start:
+      inMemory: true
+      heapInitial: 200m
+      heapMax: 1g
+      migrate: true
+      seed: true
+      convertEmptyValues: true
+
+resources:
+  Resources:
+    ProductsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ProductsTable
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        AttributeDefinitions:
+          - AttributeName: value
+            AttributeType: S
+        KeySchema:
+          - AttributeName: value
+            KeyType: HASH
