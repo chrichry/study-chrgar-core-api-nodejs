@@ -1,5 +1,7 @@
 # Template -> Serverless Offline AWS NodeJS API CRUD + DynamoDB local + DynamoDB Admin
+
 Note importante: Le seul plugin encore supporté pour dynamoDB local se trouve [ici](https://www.npmjs.com/package/serverless-dynamodb)
+
 ## Requirements
 
 [AWS CLI](https://aws.amazon.com/fr/cli/),
@@ -8,10 +10,8 @@ Note importante: Le seul plugin encore supporté pour dynamoDB local se trouve [
 ```bash
 npm i -g serverless
 npm i
-#serverless plugin install -n serverless-dynamodb-local
 serverless dynamodb install
 npm install -g dynamodb-admin
-serverless plugin install -n serverless-plugin-typescript
 ```
 
 ```bash

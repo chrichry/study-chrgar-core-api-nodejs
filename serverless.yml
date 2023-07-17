@@ -1,11 +1,16 @@
 service: study-chrgar-core-api-nodejs
-frameworkVersion: '3'
+frameworkVersion: "3"
 
 provider:
   name: aws
   runtime: nodejs18.x
-  stage: ${opt:stage, 'dev'}
-  region: ${opt:region, 'us-east-2'}
+  region: ${opt:region, 'eu-west-3'}
+  stage: ${opt:stage, "dev"}
+  profile: ${self:custom.profiles.${sls:stage}, 'asys-si-dev-serverless'}
+  memorySize: 128
+  timeout: 120
+  environment:
+    STUDY_TABLE: study_dynamodb_${self:provider.stage}
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -15,7 +20,7 @@ provider:
         - dynamodb:GetItem
         - dynamodb:PutItem
         - dynamodb:DeleteItem
-      Resource: "arn:aws:dynamodb:${self:provider.region}:*:table/ProductsTable"
+      Resource: "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.STUDY_TABLE}"
 
 functions:
   api:
@@ -30,8 +35,16 @@ functions:
       - httpApi:
           path: /add
           method: post
+  upd:
+    handler: crud/upd.handler
+    events:
+      - http:
+          path: /upd
+          method: post
+          private: true
 
 plugins:
+  - serverless-prune-versions
   - serverless-offline
   - serverless-dynamodb
   - serverless-plugin-typescript
@@ -49,19 +62,25 @@ custom:
       migrate: true
       seed: true
       convertEmptyValues: true
+  prune:
+    automatic: true
+    includeLayers: true
+    number: 3
 
 resources:
   Resources:
-    ProductsTable:
+    OrganizationDynamoDbTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: ProductsTable
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.STUDY_TABLE}
         AttributeDefinitions:
-          - AttributeName: value
+          - AttributeName: pk
+            AttributeType: S
+          - AttributeName: sk
             AttributeType: S
         KeySchema:
-          - AttributeName: value
+          - AttributeName: pk
             KeyType: HASH
+          - AttributeName: sk
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST

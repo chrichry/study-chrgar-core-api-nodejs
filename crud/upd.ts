@@ -1,14 +1,38 @@
+const { PutItemCommand } = require("@aws-sdk/client-dynamodb");
+
 module.exports.handler = async (event) => {
-    return {
-      statusCode: 200,
-      body: JSON.stringify(
-        {
-          message: "Go Serverless v3.0! Your function executed successfully!",
-          input: event,
-        },
-        null,
-        2
-      ),
-    };
+  let responseBody = "fonction appelée";
+  let statusCode = 0;
+
+  const input = {
+    TableName: tableName,
+    Item: {
+      pk: { S: "Hello" },
+      sk: { S: "world" },
+    },
   };
-  
+
+  const command = new PutItemCommand(input);
+
+  try {
+    const responseDynamo = await client.send(command);
+    console.log(responseDynamo);
+
+    responseBody = "Item created !!!";
+    statusCode = 200;
+  } catch (error) {
+    console.log(error);
+    responseBody = `Unable to create item !!!`;
+    statusCode = error.statusCode;
+  }
+
+  const response = {
+    statusCode: statusCode,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: responseBody,
+  };
+
+  return response;
+};
