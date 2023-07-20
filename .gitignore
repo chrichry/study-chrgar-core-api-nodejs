@@ -4,8 +4,9 @@ jspm_packages
 
 # Serverless directories
 .serverless
-
-# dynamoDB directories
-.dynamoDB
-
+.vagrant
+.dynamodb
 .build
+
+# Environment variables
+.env*

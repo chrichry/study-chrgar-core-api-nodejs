@@ -1,4 +1,4 @@
-service: study-chrgar-core-api-nodejs
+service: study-aws-dynamodb-serverless-nodejs
 frameworkVersion: "3"
 
 provider:
@@ -9,59 +9,71 @@ provider:
   profile: ${self:custom.profiles.${sls:stage}, 'asys-si-dev-serverless'}
   memorySize: 128
   timeout: 120
+
   environment:
     STUDY_TABLE: study_dynamodb_${self:provider.stage}
-  iamRoleStatements:
-    - Effect: Allow
-      Action:
-        - dynamodb:DescribeTable
-        - dynamodb:Query
-        - dynamodb:Scan
-        - dynamodb:GetItem
-        - dynamodb:PutItem
-        - dynamodb:DeleteItem
-      Resource: "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.STUDY_TABLE}"
+
+  apiGateway:
+    apiKeys:
+      - study-dynamodb-key
+
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource:
+            - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.STUDY_TABLE}"
 
 functions:
-  api:
-    handler: crud/index.handler
-    events:
-      - httpApi:
-          path: /up
-          method: get
-  add:
-    handler: crud/add.handler
-    events:
-      - httpApi:
-          path: /add
-          method: post
-  upd:
-    handler: crud/upd.handler
+  createItem:
+    handler: src/index.create
     events:
       - http:
-          path: /upd
+          path: /create
+          method: post
+          private: true
+  getItem:
+    handler: src/index.read
+    events:
+      - http:
+          path: /read
           method: post
           private: true
 
 plugins:
   - serverless-prune-versions
-  - serverless-offline
-  - serverless-dynamodb
   - serverless-plugin-typescript
+  - serverless-dynamodb
+  - serverless-offline
   - serverless-dynamodb-local
 
 custom:
+  serverless-offline:
+    host: 0.0.0.0
+    noPrependStageInUrl: true
   serverless-dynamodb:
     port: 8000
     stages:
-      - local-dev
+      - local
     start:
+      #docker: true
       inMemory: true
       heapInitial: 200m
       heapMax: 1g
       migrate: true
       seed: true
       convertEmptyValues: true
+  profiles:
+    local: asys-si-local-serverless
+    dev: asys-si-dev-serverless
+    prod: asys-si-serverless
   prune:
     automatic: true
     includeLayers: true
